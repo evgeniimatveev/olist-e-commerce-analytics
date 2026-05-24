@@ -1,1 +1,4 @@
 *.duckdb filter=lfs diff=lfs merge=lfs -text
+*.png filter=xet diff=xet merge=xet -text
+*.jpg filter=xet diff=xet merge=xet -text
+*.jpeg filter=xet diff=xet merge=xet -text
