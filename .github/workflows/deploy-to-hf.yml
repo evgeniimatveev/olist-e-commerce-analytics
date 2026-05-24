@@ -1,0 +1,35 @@
+name: Deploy to HuggingFace Spaces
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to HuggingFace Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config user.email "evgeniimatveevusa@gmail.com"
+          git config user.name "evgeniimatveev"
+
+          # Clone current HF Space
+          git clone https://evgeniimatveevusa:${HF_TOKEN}@huggingface.co/spaces/evgeniimatveevusa/olist-analytics hf_space
+
+          # Copy project files (exclude assets/ — use GitHub raw URLs in README)
+          rsync -av --exclude='.git' --exclude='assets/' --exclude='data/' \
+            --exclude='.github/' --exclude='target/' --exclude='dbt_packages/' \
+            --exclude='logs/' . hf_space/
+
+          # Commit and push
+          cd hf_space
+          git add -A
+          git diff --cached --quiet || git commit -m "sync: deploy from GitHub $(git -C .. rev-parse --short HEAD)"
+          git push
