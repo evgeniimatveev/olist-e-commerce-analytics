@@ -1,0 +1,7 @@
+dbt-core==1.8.0
+dbt-duckdb==1.8.4
+duckdb>=1.2.0
+pandas>=2.2.3
+streamlit>=1.35.0
+plotly>=5.22.0
+python-dotenv>=1.0.1

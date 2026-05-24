@@ -1,0 +1,21 @@
+name: 'olist_analytics'
+version: '1.0.0'
+config-version: 2
+
+profile: 'olist'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  olist_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

@@ -1,0 +1,7 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8501:7860"
+    environment:
+      - DB_PATH=/app/olist.duckdb

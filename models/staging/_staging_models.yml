@@ -1,0 +1,109 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Cleaned orders with proper timestamps and status"
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - not_null
+      - name: order_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'invoiced', 'processing',
+                       'unavailable', 'approved', 'created']
+      - name: purchased_at
+        tests:
+          - not_null
+
+  - name: stg_customers
+    description: "Cleaned customer data with normalized city/state"
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: customer_unique_id
+        tests:
+          - not_null
+      - name: state
+        tests:
+          - not_null
+
+  - name: stg_order_items
+    description: "Order line items with price and freight"
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: seller_id
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+      - name: freight_value
+        tests:
+          - not_null
+
+  - name: stg_order_payments
+    description: "Payment records per order"
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: payment_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+      - name: payment_value
+        tests:
+          - not_null
+
+  - name: stg_order_reviews
+    description: "Customer reviews with scores"
+    columns:
+      - name: review_id
+        tests:
+          - not_null
+      - name: order_id
+        tests:
+          - not_null
+      - name: review_score
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+  - name: stg_products
+    description: "Products with English category names"
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_sellers
+    description: "Seller locations"
+    columns:
+      - name: seller_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_geolocation
+    description: "Deduplicated zip code coordinates"
+    columns:
+      - name: zip_code
+        tests:
+          - not_null
+          - unique
