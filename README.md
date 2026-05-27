@@ -1,18 +1,67 @@
-# Olist E-Commerce Analytics
+# 97% of Customers Never Come Back
 
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+### An Analytics Engineering Deep Dive into Brazilian E-Commerce
+
 ![dbt](https://img.shields.io/badge/dbt-1.8.0-FF694B?logo=dbt&logoColor=white)
 ![DuckDB](https://img.shields.io/badge/DuckDB-1.5.3-FFF000?logo=duckdb&logoColor=black)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.57-FF4B4B?logo=streamlit&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
-![Plotly](https://img.shields.io/badge/Plotly-6.7-3F4F75?logo=plotly&logoColor=white)
 [![HuggingFace](https://img.shields.io/badge/🤗_HuggingFace-Spaces-FFD21E?logo=huggingface&logoColor=black)](https://evgeniimatveevusa-olist-analytics.hf.space)
 
-End-to-end analytics pipeline built on **100,000+ Brazilian e-commerce orders** — from raw CSVs to production dbt models, 54 data quality tests, and a live Streamlit dashboard.
+100,000+ orders. 9 raw tables. 13 dbt models. 54 data quality tests. One uncomfortable truth about Brazilian e-commerce retention.
 
-> "Built a full analytics engineering stack from scratch: ingestion → dbt modeling → data quality → visualization."
+**[Live Dashboard → HuggingFace Spaces](https://evgeniimatveevusa-olist-analytics.hf.space)**
 
-**[Live Demo → HuggingFace Spaces](https://evgeniimatveevusa-olist-analytics.hf.space)**
+---
+
+## The Business Problem
+
+Olist is a Brazilian marketplace that connects small businesses to major e-commerce channels. Between 2016 and 2018, it grew from zero to $1M/month in gross revenue — a textbook hyper-growth story.
+
+But the retention numbers tell a different story. I built a full dbt + DuckDB analytics stack on top of their public dataset to find out what was actually driving — and limiting — the business.
+
+---
+
+## What the Data Shows
+
+**Retention is near zero — and that's the core problem**
+
+97% of Olist customers placed exactly one order and never returned. In a business where CAC is non-trivial and delivery costs are high, this means nearly every dollar of revenue came from acquiring a new customer rather than keeping an existing one. Avg order value ($124.96) has to carry the entire unit economics.
+
+**Delivery time is a competitive liability in the Amazon region**
+
+The national on-time delivery rate looks healthy at 91.9%. But break it down by state and the picture fractures. Amazonas (AM) averages 25+ days per delivery — nearly double the national average. SP (São Paulo) delivers in under 8 days. That's not a logistics challenge, it's a two-tier product experience baked into geography.
+
+**The 91.9% headline hides where the 8.1% actually lives**
+
+Late deliveries cluster in the North and Northeast — the same states with the lowest review scores. The correlation isn't subtle. Reviews aren't a proxy for product quality; they're a proxy for whether the package arrived when promised.
+
+**Health & beauty outperforms every other category**
+
+Not electronics. Not furniture. Health & beauty drove the highest gross revenue and the highest review scores simultaneously. The best-selling category is also the best-reviewed one — which means Olist's biggest growth lever is also its strongest moat.
+
+**Revenue grew $0 → $1M/month in 18 months, then plateaued**
+
+The monthly revenue curve rises steeply through 2017 and flattens in mid-2018. Without retention, growth requires constant new customer acquisition — and that ceiling arrives faster than the headline numbers suggest.
+
+---
+
+## At a Glance
+
+| Metric | Value |
+|--------|-------|
+| Gross revenue | **$13,221,498** |
+| Delivered orders | **96,478** |
+| Unique customers | **93,357** |
+| Avg order value | **$124.96** |
+| One-time customers | **97%** |
+| On-time delivery rate | **91.9%** |
+| Avg delivery time | **12.5 days** |
+| Slowest state | **AM → 25+ days avg** |
+| Top revenue category | **health_beauty** |
+| Avg review score | **3.99 / 5.0** |
+| Revenue growth | **$0 → $1M/month in 18 months** |
 
 ---
 
@@ -62,44 +111,9 @@ End-to-end analytics pipeline built on **100,000+ Brazilian e-commerce orders** 
 
 ---
 
-## Key Findings
+## How the Data Model Works
 
-| Metric | Value |
-|--------|-------|
-| Total gross revenue | **$13,221,498** |
-| Total delivered orders | **96,478** |
-| Unique customers | **93,357** |
-| Avg order value | **$124.96** |
-| On-time delivery rate | **91.9%** |
-| Avg delivery time | **12.5 days** |
-| Avg review score | **3.99 / 5.0** |
-| One-time customers | **97%** — massive retention opportunity |
-| Slowest state (delivery) | **AM (Amazonas)** → 25+ days avg |
-| Top category by revenue | **health_beauty** |
-| Revenue growth | **$0 → $1M/month** in 18 months (2016→2018) |
-| dbt models | **13 models** · **54 tests** · **100% passing** |
-
----
-
-## Architecture
-
-```
-Kaggle CSVs (9 files · 1.5M rows)
-        ↓  Python ingestion
-   DuckDB (raw schema)
-        ↓  dbt run
-   staging/  ← 8 views · clean + typed
-        ↓  dbt run
-   marts/    ← 5 tables · business logic
-        ↓  Streamlit
-   Dashboard (6 pages · Plotly)
-        ↓  Docker
-   HuggingFace Spaces (always-on)
-```
-
----
-
-## dbt Lineage
+The analysis runs on a two-layer dbt project: staging cleans and types the raw CSVs, marts apply the business logic. Every mart answers a specific business question.
 
 ```
 raw.raw_orders ──────────────┐
@@ -109,195 +123,114 @@ raw.raw_order_payments ──────┤──► stg_order_items ───�
 raw.raw_order_reviews ───────┤──► stg_order_payments ──────┤──► mart_customer_ltv
 raw.raw_products ────────────┤──► stg_order_reviews ───────┤──► mart_seller_performance
 raw.raw_sellers ─────────────┤──► stg_products ────────────┤──► mart_reviews
-raw.raw_geolocation ─────────┘──► stg_sellers              │
-raw.raw_category_translation ───► stg_geolocation ─────────┘
+raw.raw_geolocation ─────────┘──► stg_sellers
+raw.raw_category_translation ───► stg_geolocation
 ```
 
-**54 data quality tests:** `not_null` · `unique` · `accepted_values` · all passing ✅
+| Mart | Business Question |
+|------|------------------|
+| `mart_revenue` | Which categories and periods drove growth? |
+| `mart_delivery_analysis` | Where does delivery performance break down? |
+| `mart_customer_ltv` | What does the retention curve actually look like? |
+| `mart_seller_performance` | Which sellers deliver revenue and ratings? |
+| `mart_reviews` | Does delivery time predict review score? |
+
+**54 data quality tests — all passing:**
+`not_null` on every key field · `unique` on all primary keys · `accepted_values` on status columns
 
 ---
 
-## Tech Stack
+## The Pipeline
+
+```
+Kaggle CSVs (9 files · 1.5M rows)
+        ↓  Python ingestion (scripts/load_raw.py)
+   DuckDB — raw schema
+        ↓  dbt run
+   staging/ — 8 views, cleaned + typed
+        ↓  dbt run
+   marts/ — 5 tables, business logic
+        ↓  dbt test (54 assertions, all pass)
+   Dashboard — Streamlit + Plotly (6 pages)
+        ↓  Docker
+   HuggingFace Spaces
+```
 
 | Layer | Tool |
 |-------|------|
-| Data source | Kaggle — Olist Brazilian E-Commerce (public) |
-| Database | DuckDB 1.5.3 (embedded, zero config) |
+| Raw data | Kaggle — Olist Brazilian E-Commerce (public) |
+| Database | DuckDB 1.5.3 (embedded) |
 | Transformation | dbt-core 1.8 + dbt-duckdb adapter |
-| Data quality | dbt tests (54 assertions) |
-| Dashboard | Streamlit + Plotly |
+| Data quality | 54 dbt tests — `not_null`, `unique`, `accepted_values` |
+| Dashboard | Streamlit + Plotly (6 pages) |
 | Containerization | Docker + Docker Compose |
 | Deployment | HuggingFace Spaces (Docker SDK) |
-| DB Explorer | DBeaver |
 
 ---
 
-## Dashboard Pages
+## Run It
 
-**Overview** — 7 KPI cards · Monthly revenue area chart · Top 10 categories bar
-
-**Revenue** — Monthly gross revenue · Order volume · Category breakdown (Top 15)
-
-**Delivery** — On-time vs late donut · Avg days by state heatmap · On-time rate by state
-
-**Customers** — Segment pie (one-time / returning / loyal) · LTV quintile bars · Segment table
-
-**Sellers** — Revenue vs rating scatter (bubble = order volume) · Top 10 table · Sellers by state
-
-**Reviews** — Avg score trend · Review volume · Positive rate over time
-
----
-
-## Quick Start
-
-### Option A — Docker (recommended)
+### Docker
 
 ```bash
 git clone https://github.com/evgeniimatveev/olist-e-commerce-analytics.git
 cd olist-e-commerce-analytics
-
-# Place Kaggle CSVs in data/ folder first (see "Load Your Own Data" below)
+# Place Kaggle CSVs in data/ first
 docker compose up --build
 ```
 Open **http://localhost:8501**
 
-### Option B — Python
+### Python
 
 ```bash
 git clone https://github.com/evgeniimatveev/olist-e-commerce-analytics.git
 cd olist-e-commerce-analytics
-
 pip install duckdb --only-binary=:all:
 pip install -r requirements.txt
-
-# Place CSVs in data/ folder, then:
-python scripts/load_raw.py
-dbt run --profiles-dir .
-
+python scripts/load_raw.py       # CSVs → DuckDB
+dbt run --profiles-dir .         # raw → staging → marts
+dbt test --profiles-dir .        # 54 quality checks
 python -m streamlit run dashboard/app.py
 ```
 
----
-
-## Load Your Own Data
-
-1. **Download dataset** from Kaggle: search `"olist brazilian ecommerce"`
-2. **Place all 9 CSVs** in `data/` folder:
-   ```
-   data/
-   ├── olist_orders_dataset.csv
-   ├── olist_customers_dataset.csv
-   ├── olist_order_items_dataset.csv
-   ├── olist_order_payments_dataset.csv
-   ├── olist_order_reviews_dataset.csv
-   ├── olist_products_dataset.csv
-   ├── olist_sellers_dataset.csv
-   ├── olist_geolocation_dataset.csv
-   └── product_category_name_translation.csv
-   ```
-3. **Run the pipeline:**
-   ```bash
-   python scripts/load_raw.py   # CSVs → DuckDB raw schema
-   dbt run --profiles-dir .     # raw → staging → marts
-   dbt test --profiles-dir .    # 54 quality checks
-   ```
-4. **Launch dashboard:**
-   ```bash
-   python -m streamlit run dashboard/app.py
-   ```
+**Need the data?** Search `"olist brazilian ecommerce"` on Kaggle — 9 CSVs, all public.
 
 ---
 
 ## Project Structure
 
 ```
-olist-e-commerce-analytics/
-├── data/                        # CSVs here (gitignored)
+olist-dbt-duckdb/
 ├── models/
-│   ├── staging/                 # 8 views — clean + typed
-│   │   ├── _sources.yml
-│   │   ├── _staging_models.yml  # 30+ data tests
-│   │   ├── stg_orders.sql
-│   │   ├── stg_customers.sql
-│   │   ├── stg_order_items.sql
-│   │   ├── stg_order_payments.sql
-│   │   ├── stg_order_reviews.sql
-│   │   ├── stg_products.sql
-│   │   ├── stg_sellers.sql
-│   │   └── stg_geolocation.sql
-│   └── marts/                   # 5 tables — business logic
-│       ├── _marts_models.yml    # 24 data tests
-│       ├── mart_revenue.sql
-│       ├── mart_delivery_analysis.sql
-│       ├── mart_customer_ltv.sql
-│       ├── mart_seller_performance.sql
-│       └── mart_reviews.sql
+│   ├── staging/         # 8 views — stg_orders, stg_customers, ...
+│   └── marts/           # 5 tables — revenue, delivery, ltv, sellers, reviews
 ├── scripts/
-│   └── load_raw.py              # CSV → DuckDB ingestion
+│   └── load_raw.py      # CSV → DuckDB ingestion
 ├── dashboard/
-│   ├── app.py                   # Streamlit (6 pages)
-│   └── db.py                    # DuckDB query layer
-├── assets/                      # Screenshots
-├── .streamlit/
-│   └── config.toml
+│   ├── app.py           # Streamlit (6 pages)
+│   └── db.py            # DuckDB query layer
 ├── dbt_project.yml
 ├── profiles.yml
 ├── Dockerfile
-├── docker-compose.yml
-└── requirements.txt
+└── docker-compose.yml
 ```
 
 ---
 
-## Data Schema
+## Raw Data
 
-| Table (raw) | Rows | Description |
-|-------------|------|-------------|
-| `raw_orders` | 99,441 | Order lifecycle — status, timestamps |
-| `raw_order_items` | 112,650 | Line items — price, freight, seller |
-| `raw_order_payments` | 103,886 | Payments — type, installments, value |
-| `raw_order_reviews` | 99,224 | Customer reviews — score, text |
-| `raw_customers` | 99,441 | Customer locations |
-| `raw_products` | 32,951 | Product catalog + categories |
+| Table | Rows | What it contains |
+|-------|------|-----------------|
+| `raw_orders` | 99,441 | Order lifecycle and status timestamps |
+| `raw_order_items` | 112,650 | Line items — price, freight, seller ID |
+| `raw_order_payments` | 103,886 | Payment type, installments, value |
+| `raw_order_reviews` | 99,224 | Customer ratings and text |
+| `raw_customers` | 99,441 | Customer zip codes and states |
+| `raw_products` | 32,951 | Product catalog and categories |
 | `raw_sellers` | 3,095 | Seller locations |
 | `raw_geolocation` | 1,000,163 | Zip code → lat/lng |
-| `raw_category_translation` | 71 | PT → EN category names |
+| `raw_category_translation` | 71 | Portuguese → English category names |
 
 ---
 
-## Insights That Surprised Me
-
-**97% of customers buy only once** — Olist's biggest business problem is right there in the data. Retention is near zero, which makes avg order value and delivery experience critical.
-
-**AM (Amazonas) takes 25+ days** — Geography is destiny in Brazil. The Amazon region has drastically longer delivery times — a real operational challenge visible in the data.
-
-**Revenue grew 0 → $1M/month in 18 months** — The platform was in hyper-growth mode from late 2016 through 2018. The monthly trend tells the whole story at a glance.
-
-**91.9% on-time rate hides state-level extremes** — Nationally the number looks good, but broken down by state, some regions are consistently late — a finding only visible with proper dimensional modeling.
-
----
-
-## Skills Demonstrated
-
-- **Analytics Engineering** — dbt project with staging + marts layers, `ref()` dependency graph
-- **Data Modeling** — star schema design, dimensional thinking, denormalization tradeoffs
-- **Data Quality** — 54 automated tests: `not_null`, `unique`, `accepted_values`
-- **SQL** — window functions (`ntile`, `datediff`), CTEs, multi-table joins, aggregations
-- **Data Engineering** — CSV ingestion pipeline, DuckDB schema design, environment-agnostic paths
-- **Visualization** — Streamlit multi-page app, Plotly charts (area, bar, scatter, donut, pie)
-- **DevOps** — Docker containerization, Docker Compose, HuggingFace Spaces deployment
-
----
-
-## Availability
-
-| Layer | Detail |
-|-------|--------|
-| Hosting | HuggingFace Spaces (Docker SDK) |
-| Uptime | 24/7 — HF Spaces does not sleep |
-| Database | DuckDB embedded — bundled in Docker image |
-| Build | Pipeline runs at image build time (`load_raw` + `dbt run`) |
-
----
-
-*Data: Olist Brazilian E-Commerce · Kaggle public dataset · 2016–2018*
+*Olist Brazilian E-Commerce · Kaggle public dataset · 2016–2018 · Built by Evgenii Matveev*
