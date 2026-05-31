@@ -17,8 +17,8 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git config user.email "evgeniimatveevusa@gmail.com"
-          git config user.name "evgeniimatveev"
+          git config --global user.email "evgeniimatveevusa@gmail.com"
+          git config --global user.name "evgeniimatveev"
 
           # Clone current HF Space
           git clone https://evgeniimatveevusa:${HF_TOKEN}@huggingface.co/spaces/evgeniimatveevusa/olist-analytics hf_space
