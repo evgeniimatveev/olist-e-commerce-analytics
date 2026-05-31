@@ -22,7 +22,7 @@ jobs:
           git config --global user.name "evgeniimatveev"
           git clone https://evgeniimatveevusa:${HF_TOKEN}@huggingface.co/spaces/evgeniimatveevusa/olist-analytics hf_space
           rsync -av --exclude='.git' --exclude='assets/' --exclude='data/' --exclude='.github/' --exclude='target/' --exclude='dbt_packages/' --exclude='logs/' --exclude='hf_space/' --exclude='README.md' . hf_space/
-          { echo '---'; echo 'title: Olist Analytics'; echo 'emoji: 📦'; echo 'colorFrom: blue'; echo 'colorTo: green'; echo 'sdk: docker'; echo 'app_port: 8501'; echo 'pinned: false'; echo '---'; } > hf_space/README.md
+          { echo '---'; echo 'title: Olist Analytics'; echo 'emoji: 📦'; echo 'colorFrom: blue'; echo 'colorTo: green'; echo 'sdk: docker'; echo 'app_port: 7860'; echo 'pinned: false'; echo '---'; } > hf_space/README.md
           cd hf_space
           git add -A
           git diff --cached --quiet || git commit -m "sync: deploy from GitHub $(git -C .. rev-parse --short HEAD)"
