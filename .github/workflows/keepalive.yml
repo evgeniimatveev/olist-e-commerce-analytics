@@ -1,0 +1,21 @@
+name: Keepalive Ping
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # every hour
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping HuggingFace Space
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --location \
+            https://evgeniimatveevusa-olist-analytics.hf.space/)
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "App is alive at HuggingFace Spaces"
+          else
+            echo "Warning: unexpected status $STATUS"
+          fi
