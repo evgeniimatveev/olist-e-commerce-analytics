@@ -16,7 +16,7 @@ def kpis() -> dict:
         select
             round(sum(gross_revenue), 0)            as total_revenue,
             count(distinct order_id)                as total_orders,
-            round(avg(gross_revenue / items_count), 2) as avg_order_value
+            round(sum(gross_revenue) / count(distinct order_id), 2) as avg_order_value
         from main_marts.mart_revenue
     """)
     customers = query("select count(*) as n from main_marts.mart_customer_ltv").iloc[0]["n"]
@@ -26,10 +26,17 @@ def kpis() -> dict:
             round(sum(case when delivery_status='on_time' then 1 end)*100.0/count(*), 1) as on_time_pct
         from main_marts.mart_delivery_analysis
     """)
-    reviews = query("select round(avg(avg_score),2) as score from main_marts.mart_reviews").iloc[0]["score"]
+    # order-level mean over delivered orders (mart_reviews holds per-month/category averages;
+    # averaging those would be a mean of means, not the true average score)
+    reviews = query("""
+        select round(avg(r.review_score), 2) as score
+        from main_staging.stg_order_reviews r
+        join main_staging.stg_orders o using (order_id)
+        where o.order_status = 'delivered'
+    """).iloc[0]["score"]
     return {
         "total_revenue":   df.iloc[0]["total_revenue"],
-        "total_orders":    df.iloc[0]["total_orders"],
+        "total_orders":    int(df.iloc[0]["total_orders"]),
         "avg_order_value": df.iloc[0]["avg_order_value"],
         "total_customers": customers,
         "avg_delivery_days": delivery.iloc[0]["avg_days"],
